@@ -1,8 +1,9 @@
 ; MeTTa sketch of the same cognitive cycle.
 ; Requires: pip install hyperon-ecan[hyperon]
-; Then:     metta-py examples/concept_attention.metta
+; Then:     metta examples/concept_attention.metta
 ;
-; The Python grounded atoms live in hyperon_ecan.ext.
+; Grounded atoms are registered by importing hyperon_ecan
+; (implementation is hyperon_ecan/ext.py).
 
 !(import! &self hyperon_ecan)
 
