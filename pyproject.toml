@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hyperon-ecan"
+version = "0.1.0"
+description = "MeTTa-oriented Economic Attention Networks with a neural spreading space for OpenCog Hyperon"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Aljo Joby" }]
+keywords = ["opencog", "hyperon", "metta", "ecan", "agi", "attention", "neural-symbolic"]
+dependencies = ["numpy>=1.24"]
+
+[project.optional-dependencies]
+hyperon = ["hyperon"]
+dev = ["pytest>=7.4"]
+
+[project.urls]
+Homepage = "https://github.com/aljojoby9/hyperon-ecan"
+
+[tool.setuptools.packages.find]
+include = ["hyperon_ecan*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
