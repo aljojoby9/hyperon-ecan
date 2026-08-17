@@ -19,12 +19,14 @@ from .cycle import CognitiveCycle
 from .inference import AttentionChainer, Triple
 from .network import ECAN
 from .params import ECANParams
+from .semantic import attach_clusters
 
 try:
-    from hyperon import E, GroundedAtom, OperationAtom, S, SymbolAtom, ValueAtom
+    from hyperon import E, ExpressionAtom, GroundedAtom, OperationAtom, S, SymbolAtom, ValueAtom
     from hyperon.ext import register_atoms
 except ImportError:  # pragma: no cover - hyperon is optional
     E = None
+    ExpressionAtom = None
     GroundedAtom = None
     OperationAtom = None
     S = None
@@ -140,6 +142,19 @@ def ecan_infer(*_args):
     return [E(S(inferred.rel), S(inferred.src), S(inferred.dst))]
 
 
+def _names_from(atom) -> list[str]:
+    if ExpressionAtom is not None and isinstance(atom, ExpressionAtom):
+        return [_name(child) for child in atom.get_children()]
+    return [_name(atom)]
+
+
+def ecan_cluster(*groups):
+    """!(ecan-cluster (dog wolf) (oak tree)) — shared embedding per group."""
+    clusters = [_names_from(group) for group in groups]
+    attach_clusters(_ecan(), clusters)
+    return [E(*[E(*[S(n) for n in cluster]) for cluster in clusters])]
+
+
 def ecan_tick(percept, *_args):
     cycle = CognitiveCycle(_ecan(), _chainer())
     tick = cycle.tick([_name(percept)])
@@ -162,6 +177,7 @@ def ecan_atoms():
         "ecan-sti": OperationAtom("ecan-sti", ecan_sti, unwrap=False),
         "neural-similar": OperationAtom("neural-similar", neural_similar, unwrap=False),
         "ecan-fact": OperationAtom("ecan-fact", ecan_fact, unwrap=False),
+        "ecan-cluster": OperationAtom("ecan-cluster", ecan_cluster, unwrap=False),
         "ecan-infer": OperationAtom("ecan-infer", ecan_infer, unwrap=False),
         "ecan-tick": OperationAtom("ecan-tick", ecan_tick, unwrap=False),
     }

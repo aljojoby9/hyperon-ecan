@@ -56,17 +56,13 @@ log = cycle.run(["dog"], Triple("Inheritance", "dog", "animal"))
 print(log[-1].proved, log[-1].focus)
 ```
 
-## MeTTa sketch
+## MeTTa walkthrough
 
-```metta
-!(import! &self hyperon_ecan)
-!(ecan-new)
-!(ecan-fact Inheritance dog mammal)
-!(ecan-fact Inheritance mammal animal)
-!(ecan-tick dog)
-!(ecan-focus)
-!(neural-similar dog)
+```bash
+metta examples/concept_attention.metta
 ```
+
+That script adds facts, clusters `dog`/`wolf` vs `oak`/`tree`, stimulates `dog`, then prints focus, neural neighbors, STI, and one inference step. `wolf` should pick up STI; `oak` should not. `!(ecan-infer)` should return `(Inheritance dog animal)`.
 
 ## How to contribute this upstream
 
