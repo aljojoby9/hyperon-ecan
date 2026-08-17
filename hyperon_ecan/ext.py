@@ -21,10 +21,14 @@ from .network import ECAN
 from .params import ECANParams
 
 try:
-    from hyperon import OperationAtom, ValueAtom
+    from hyperon import E, GroundedAtom, OperationAtom, S, SymbolAtom, ValueAtom
     from hyperon.ext import register_atoms
 except ImportError:  # pragma: no cover - hyperon is optional
+    E = None
+    GroundedAtom = None
     OperationAtom = None
+    S = None
+    SymbolAtom = None
     ValueAtom = None
     register_atoms = None
 
@@ -50,77 +54,118 @@ def _chainer() -> AttentionChainer:
     return chainer
 
 
-def ecan_new() -> str:
-    _STATE["ecan"] = ECAN(ECANParams())
-    _STATE["chainer"] = AttentionChainer(_STATE["ecan"])  # type: ignore[arg-type]
-    return "ok"
+def _name(atom) -> str:
+    if SymbolAtom is not None and isinstance(atom, SymbolAtom):
+        return atom.get_name()
+    if GroundedAtom is not None and isinstance(atom, GroundedAtom):
+        obj = atom.get_object()
+        for attr in ("value", "content"):
+            if hasattr(obj, attr):
+                return str(getattr(obj, attr))
+        return str(obj)
+    return str(atom)
 
 
-def ecan_add(name: str) -> str:
-    _ecan().add(str(name))
-    return str(name)
+def _num(atom, default: float) -> float:
+    if GroundedAtom is not None and isinstance(atom, GroundedAtom):
+        obj = atom.get_object()
+        val = getattr(obj, "value", getattr(obj, "content", None))
+        if isinstance(val, (int, float)):
+            return float(val)
+    try:
+        return float(_name(atom))
+    except ValueError:
+        return default
 
 
-def ecan_link(a: str, b: str, strength: float = 0.5) -> str:
-    _ecan().link(str(a), str(b), float(strength))
-    return f"{a}-{b}"
+def ecan_new(*_args):
+    net = ECAN(ECANParams())
+    _STATE["ecan"] = net
+    _STATE["chainer"] = AttentionChainer(net)
+    return [ValueAtom("ok")]
 
 
-def ecan_stimulate(name: str, amount: float = 1.0) -> float:
-    _ecan().stimulate({str(name): float(amount)})
-    return _ecan().atoms[str(name)].sti
+def ecan_add(name, *_args):
+    label = _name(name)
+    _ecan().add(label)
+    return [S(label)]
 
 
-def ecan_cycle(forget: bool = False) -> int:
-    stats = _ecan().cycle(forget=bool(forget))
-    return len(stats.af)
+def ecan_link(a, b, *rest):
+    strength = _num(rest[0], 0.5) if rest else 0.5
+    left, right = _name(a), _name(b)
+    _ecan().link(left, right, strength)
+    return [E(S(left), S(right))]
 
 
-def ecan_focus() -> list[str]:
-    return [a.name for a in _ecan().attentional_focus()]
+def ecan_stimulate(name, *rest):
+    label = _name(name)
+    amount = _num(rest[0], 1.0) if rest else 1.0
+    _ecan().stimulate({label: amount})
+    return [ValueAtom(_ecan().atoms[label].sti)]
 
 
-def ecan_sti(name: str) -> float:
-    atom = _ecan().atoms.get(str(name))
-    return 0.0 if atom is None else atom.sti
+def ecan_cycle(*rest):
+    forget = bool(rest) and _name(rest[0]).lower() == "true"
+    stats = _ecan().cycle(forget=forget)
+    return [ValueAtom(len(stats.af))]
 
 
-def neural_similar(name: str, k: int = 5) -> list[str]:
-    return [n for n, _score in _ecan().query_similar(str(name), k=int(k))]
+def ecan_focus(*_args):
+    names = [a.name for a in _ecan().attentional_focus()]
+    return [E(*[S(n) for n in names])] if names else [E()]
 
 
-def ecan_fact(rel: str, src: str, dst: str) -> str:
-    _chainer().assert_fact(Triple(str(rel), str(src), str(dst)))
-    return f"({rel} {src} {dst})"
+def ecan_sti(name, *_args):
+    atom = _ecan().atoms.get(_name(name))
+    return [ValueAtom(0.0 if atom is None else atom.sti)]
 
 
-def ecan_infer() -> str:
+def neural_similar(name, *rest):
+    k = int(_num(rest[0], 5.0)) if rest else 5
+    hits = [n for n, _score in _ecan().query_similar(_name(name), k=k)]
+    return [E(*[S(n) for n in hits])] if hits else [E()]
+
+
+def ecan_fact(rel, src, dst, *_args):
+    r, s, d = _name(rel), _name(src), _name(dst)
+    _chainer().assert_fact(Triple(r, s, d))
+    return [E(S(r), S(s), S(d))]
+
+
+def ecan_infer(*_args):
     inferred = _chainer().step(require_focus=True)
-    return "none" if inferred is None else f"({inferred.rel} {inferred.src} {inferred.dst})"
+    if inferred is None:
+        return [S("none")]
+    return [E(S(inferred.rel), S(inferred.src), S(inferred.dst))]
 
 
-def ecan_tick(percept: str) -> str:
+def ecan_tick(percept, *_args):
     cycle = CognitiveCycle(_ecan(), _chainer())
-    tick = cycle.tick([str(percept)])
+    tick = cycle.tick([_name(percept)])
     focus = ",".join(tick.focus) if tick.focus else "-"
     inferred = "none" if tick.inferred is None else f"{tick.inferred.src}->{tick.inferred.dst}"
-    return f"focus={focus}; inferred={inferred}"
+    return [ValueAtom(f"focus={focus}; inferred={inferred}")]
+
+
+def ecan_atoms():
+    """Exposed on the hyperon_ecan package so `!(import! &self hyperon_ecan)` finds it."""
+    if OperationAtom is None:
+        return {}
+    return {
+        "ecan-new": OperationAtom("ecan-new", ecan_new, unwrap=False),
+        "ecan-add": OperationAtom("ecan-add", ecan_add, unwrap=False),
+        "ecan-link": OperationAtom("ecan-link", ecan_link, unwrap=False),
+        "ecan-stimulate": OperationAtom("ecan-stimulate", ecan_stimulate, unwrap=False),
+        "ecan-cycle": OperationAtom("ecan-cycle", ecan_cycle, unwrap=False),
+        "ecan-focus": OperationAtom("ecan-focus", ecan_focus, unwrap=False),
+        "ecan-sti": OperationAtom("ecan-sti", ecan_sti, unwrap=False),
+        "neural-similar": OperationAtom("neural-similar", neural_similar, unwrap=False),
+        "ecan-fact": OperationAtom("ecan-fact", ecan_fact, unwrap=False),
+        "ecan-infer": OperationAtom("ecan-infer", ecan_infer, unwrap=False),
+        "ecan-tick": OperationAtom("ecan-tick", ecan_tick, unwrap=False),
+    }
 
 
 if register_atoms is not None:  # pragma: no cover
-
-    @register_atoms
-    def ecan_atoms():
-        return {
-            "ecan-new": OperationAtom("ecan-new", ecan_new),
-            "ecan-add": OperationAtom("ecan-add", ecan_add),
-            "ecan-link": OperationAtom("ecan-link", ecan_link),
-            "ecan-stimulate": OperationAtom("ecan-stimulate", ecan_stimulate),
-            "ecan-cycle": OperationAtom("ecan-cycle", ecan_cycle),
-            "ecan-focus": OperationAtom("ecan-focus", ecan_focus),
-            "ecan-sti": OperationAtom("ecan-sti", ecan_sti),
-            "neural-similar": OperationAtom("neural-similar", neural_similar),
-            "ecan-fact": OperationAtom("ecan-fact", ecan_fact),
-            "ecan-infer": OperationAtom("ecan-infer", ecan_infer),
-            "ecan-tick": OperationAtom("ecan-tick", ecan_tick),
-        }
+    ecan_atoms = register_atoms(ecan_atoms)

@@ -14,9 +14,9 @@ from .neural import hashed_embedding, cosine
 from .semantic import attach_clusters
 
 try:
-    from . import ext as ext  # registers MeTTa atoms when hyperon is installed
+    from .ext import ecan_atoms  # MeTTa looks for this on the package
 except Exception:
-    ext = None
+    pass
 
 __all__ = [
     "ECAN",
