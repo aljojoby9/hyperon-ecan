@@ -1,4 +1,11 @@
-from hyperon_ecan import AttentionChainer, CognitiveCycle, ECAN, ECANParams, Triple
+from hyperon_ecan import (
+    AttentionChainer,
+    CognitiveCycle,
+    ECAN,
+    ECANParams,
+    Triple,
+    attach_clusters,
+)
 from examples.associative_memory import imprint_and_retrieve
 from examples.attention_gated_inference import run_demo
 
@@ -17,6 +24,22 @@ def test_attention_gated_inference_proves_goal():
     assert result["proved"] is True
     assert "dog->animal" in result["inferences"]
     assert result["wolf_sti"] > result["oak_sti"]
+
+
+def test_walkthrough_stimulus_keeps_dog_in_focus():
+    net = ECAN(ECANParams())
+    chainer = AttentionChainer(net)
+    chainer.assert_fact(Triple("Inheritance", "dog", "mammal"))
+    chainer.assert_fact(Triple("Inheritance", "mammal", "animal"))
+    chainer.assert_fact(Triple("Inheritance", "oak", "tree"))
+    net.add("wolf")
+    attach_clusters(net, [["dog", "wolf", "mammal"], ["oak", "tree"]])
+    net.stimulate({"dog": 20.0})
+    net.cycle()
+    focus = {a.name for a in net.attentional_focus()}
+    assert "dog" in focus
+    assert net.atoms["wolf"].sti > net.atoms["oak"].sti
+    assert chainer.step() == Triple("Inheritance", "dog", "animal")
 
 
 def test_unfocused_subgraph_is_not_expanded():

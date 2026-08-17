@@ -148,6 +148,21 @@ def _names_from(atom) -> list[str]:
     return [_name(atom)]
 
 
+def ecan_report(*names):
+    net = _ecan()
+    keys = [_name(n) for n in names] if names else sorted(net.atoms)
+    focus = {a.name for a in net.attentional_focus()}
+    lines = []
+    for key in keys:
+        atom = net.atoms.get(key)
+        if atom is None:
+            lines.append(f"{key}: missing")
+            continue
+        flag = "focus" if key in focus else "idle"
+        lines.append(f"{key}: sti={atom.sti:.2f} {flag}")
+    return [ValueAtom(" | ".join(lines) if lines else "empty")]
+
+
 def ecan_cluster(*groups):
     """!(ecan-cluster (dog wolf) (oak tree)) — shared embedding per group."""
     clusters = [_names_from(group) for group in groups]
@@ -178,6 +193,7 @@ def ecan_atoms():
         "neural-similar": OperationAtom("neural-similar", neural_similar, unwrap=False),
         "ecan-fact": OperationAtom("ecan-fact", ecan_fact, unwrap=False),
         "ecan-cluster": OperationAtom("ecan-cluster", ecan_cluster, unwrap=False),
+        "ecan-report": OperationAtom("ecan-report", ecan_report, unwrap=False),
         "ecan-infer": OperationAtom("ecan-infer", ecan_infer, unwrap=False),
         "ecan-tick": OperationAtom("ecan-tick", ecan_tick, unwrap=False),
     }

@@ -1,44 +1,33 @@
-; Walk through ECAN from MeTTa, one step at a time.
+; Step-by-step ECAN from MeTTa.
 ; pip install hyperon-ecan[hyperon]
 ; metta examples/concept_attention.metta
 ;
-; Each ! line prints a result. Comments say what that result means.
+; After rent, STI 12 falls below the default focus cutoff (8), so infer
+; would return none. 20 is enough for dog to stay in focus.
 
 !(import! &self hyperon_ecan)
 !(ecan-new)
 
-; --- knowledge -----------------------------------------------------------
-; Inheritance facts also add Hebbian links. wolf has no symbolic edge.
+; Knowledge. wolf has no Inheritance edge.
 !(ecan-fact Inheritance dog mammal)
 !(ecan-fact Inheritance mammal animal)
 !(ecan-fact Inheritance cat mammal)
 !(ecan-fact Inheritance oak tree)
 !(ecan-add wolf)
 
-; Put dog/wolf in one embedding cluster, oak/tree in another.
-; Without this, hashed n-grams will not treat dog and wolf as neighbors.
+; Neural groups: dog~wolf, oak~tree. Hashed n-grams will not do this alone.
 !(ecan-cluster (dog wolf mammal) (oak tree))
 
-; --- empty working memory ------------------------------------------------
-; Focus is empty. STI on dog/wolf/oak should be ~0.
-!(ecan-focus)
-!(ecan-sti dog)
-!(ecan-sti wolf)
-!(ecan-sti oak)
+; Empty working memory.
+!(ecan-report dog wolf oak mammal animal)
 
-; --- pay attention to dog ------------------------------------------------
-; Stimulus is a bank transfer. After one cycle, focus should include dog
-; and stuff linked to it. wolf can pick up STI via the neural cluster;
-; oak should stay near 0.
-!(ecan-stimulate dog 12)
-!(ecan-sti dog)
+; Pay dog, then one ECAN cycle (rent + Hebbian + spread).
+!(ecan-stimulate dog 20)
 !(ecan-cycle)
-!(ecan-focus)
+!(ecan-report dog wolf oak mammal animal)
 !(neural-similar dog)
-!(ecan-sti wolf)
-!(ecan-sti oak)
 
-; --- infer only on the focused subgraph ---------------------------------
-; Should derive (Inheritance dog animal), not anything about oak.
+; dog and maybe mammal in focus. wolf STI > oak. oak still idle.
+; Next inference step should be (Inheritance dog animal).
 !(ecan-infer)
-!(ecan-focus)
+!(ecan-report dog wolf oak mammal animal)
