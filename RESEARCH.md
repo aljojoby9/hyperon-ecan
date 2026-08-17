@@ -11,10 +11,11 @@ As of 2026:
 - MeTTa / `hyperon-experimental` is real and installable.
 - Distributed Atomspace is real.
 - PLN has `trueagi-io/PLN` and `pln-experimental`.
-- ECAN has **no Hyperon module**. Classic ECAN is marked obsolete.
+- Classic ECAN is marked obsolete. iCog's [metta-attention](https://github.com/iCog-Labs-Dev/metta-attention) ports the MindAgents to MeTTa on PeTTa.
+- hyperon-experimental still had no Iklé-2009 + neural + gated-infer module.
 - “Neural Space” in 2023 Hyperon talks was an LLM-calling `Space.query` demo, not an embedding geometry that participates in attention.
 
-So the hole is not “write another tutorial.” The hole is a cognitive algorithm the architecture assumes and the codebase does not have.
+See [COMPARISON.md](COMPARISON.md). The remaining hole on this interpreter is not “another Classic agent port.”
 
 ## What we implemented
 

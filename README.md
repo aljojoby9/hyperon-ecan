@@ -2,15 +2,19 @@
 
 A **research implementation** of Economic Attention Networks for [OpenCog Hyperon](https://github.com/trueagi-io/hyperon-experimental).
 
-Classic OpenCog had ECAN. Hyperon does not. The Hyperon paper lists PLN, MOSES and ECAN as the cognitive algorithms that should be rewritten in MeTTa. PLN has a port. ECAN does not. This repo fills that hole, and adds one thing Classic never had: **attention that also spreads along embedding similarity**.
-
-You do not need to invent a contribution topic. This is the one. The code here is meant to be offered upstream as a `metta-examples` module or a sibling of [`trueagi-io/PLN`](https://github.com/trueagi-io/PLN).
+Classic OpenCog had ECAN. iCog ported the Classic MindAgents to MeTTa as
+[metta-attention](https://github.com/iCog-Labs-Dev/metta-attention) (PeTTa).
+This repo is a different slice: Iklé 2009 Variant 1 on
+hyperon-experimental, plus embedding Hebbian links and attention-gated
+inference. Example is in [metta-examples/ecan](https://github.com/trueagi-io/metta-examples/tree/main/ecan).
+See [COMPARISON.md](COMPARISON.md).
 
 ## What is actually new
 
 | Piece | Status in Hyperon before this | This repo |
 | --- | --- | --- |
-| ECAN Variant 1 (Iklé, Pitt, Goertzel, Sellman 2009) | Specified, not shipped | Running: STI/LTI currencies, rent, wages, Hebbian update, left-stochastic diffusion, forgetting |
+| Classic ECAN MindAgents in MeTTa | [metta-attention](https://github.com/iCog-Labs-Dev/metta-attention) (PeTTa) | Not that |
+| ECAN Variant 1 (Iklé, Pitt, Goertzel, Sellman 2009) on hyperon-experimental | Not shipped | Running: STI/LTI currencies, rent, wages, Hebbian update, left-stochastic diffusion, forgetting |
 | Neural Space as LLM prompt wrapper | Toy example, 2023 | Not that |
 | Implicit Hebbian from embeddings | Does not exist | Cosine links mixed into the diffusion matrix |
 | Attention-gated inference loop | Described in the 2009 paper, never a Hyperon module | Perceive → attend → infer → update |
